@@ -1,0 +1,24 @@
+{
+  "name": "git-stats",
+  "version": "1.0.0",
+  "description": "Beautiful git repository statistics",
+  "main": "index.js",
+  "bin": {
+    "git-stats": "./index.js"
+  },
+  "scripts": {
+    "start": "node index.js"
+  },
+  "keywords": [
+    "git",
+    "statistics",
+    "cli",
+    "stats",
+    "repository"
+  ],
+  "author": "SuperDragon777",
+  "license": "MIT",
+  "engines": {
+    "node": ">=14.0.0"
+  }
+}
