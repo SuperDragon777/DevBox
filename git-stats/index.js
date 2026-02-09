@@ -10,6 +10,29 @@ class GitStats {
         this.isGitRepo = this.checkGitRepo();
     }
 
+getAllFiles(dir, fileList = []) {
+    const entries = fs.readdirSync(dir, { withFileTypes: true });
+
+    for (const entry of entries) {
+        const fullPath = path.join(dir, entry.name);
+
+        if (
+            entry.name === '.git' ||
+            entry.name === 'node_modules' ||
+            entry.name === 'dist' ||
+            entry.name === 'build'
+        ) continue;
+
+        if (entry.isDirectory()) {
+            this.getAllFiles(fullPath, fileList);
+        } else {
+            fileList.push(fullPath);
+        }
+    }
+
+    return fileList;
+}
+
     checkGitRepo() {
         try {
             execSync('git rev-parse --git-dir', { 
@@ -92,57 +115,55 @@ class GitStats {
     }
 
     getLanguageStats() {
-        const output = this.exec('git ls-files');
-        if (!output) {
-            return [];
+    const files = this.getAllFiles(this.repoPath);
+
+    const languages = {
+        JavaScript: ['.js', '.jsx', '.mjs'],
+        TypeScript: ['.ts', '.tsx'],
+        Python: ['.py'],
+        Java: ['.java'],
+        'C/C++': ['.c', '.cpp', '.h', '.hpp', '.cc', '.cxx'],
+        'C#': ['.cs'],
+        Go: ['.go'],
+        Rust: ['.rs'],
+        PHP: ['.php'],
+        Ruby: ['.rb'],
+        HTML: ['.html', '.htm'],
+        CSS: ['.css', '.scss', '.sass', '.less'],
+        Shell: ['.sh', '.bash'],
+        SQL: ['.sql'],
+        Markdown: ['.md', '.markdown'],
+        JSON: ['.json'],
+        XML: ['.xml'],
+        YAML: ['.yml', '.yaml'],
+        PowerShell: ['.ps1', '.psm1'],
+        Batch: ['.bat', '.cmd']
+    };
+
+    const langCount = {};
+
+    for (const file of files) {
+        const ext = path.extname(file).toLowerCase();
+        let matched = false;
+
+        for (const [lang, exts] of Object.entries(languages)) {
+            if (exts.includes(ext)) {
+                langCount[lang] = (langCount[lang] || 0) + 1;
+                matched = true;
+                break;
+            }
         }
-        
-        const files = output.split('\n').filter(f => f.trim());
-        
-        const languages = {
-            'JavaScript': ['.js', '.jsx', '.mjs'],
-            'TypeScript': ['.ts', '.tsx'],
-            'Python': ['.py'],
-            'Java': ['.java'],
-            'C/C++': ['.c', '.cpp', '.h', '.hpp', '.cc', '.cxx'],
-            'C#': ['.cs'],
-            'Go': ['.go'],
-            'Rust': ['.rs'],
-            'PHP': ['.php'],
-            'Ruby': ['.rb'],
-            'HTML': ['.html', '.htm'],
-            'CSS': ['.css', '.scss', '.sass', '.less'],
-            'Shell': ['.sh', '.bash'],
-            'SQL': ['.sql'],
-            'Markdown': ['.md', '.markdown'],
-            'JSON': ['.json'],
-            'XML': ['.xml'],
-            'YAML': ['.yml', '.yaml'],
-            'PowerShell': ['.ps1', '.psm1'],
-            'Batch': ['.bat', '.cmd']
-        };
-        
-        const langCount = {};
-        
-        files.forEach(file => {
-            const ext = path.extname(file).toLowerCase();
-            let found = false;
-            for (const [lang, exts] of Object.entries(languages)) {
-                if (exts.includes(ext)) {
-                    langCount[lang] = (langCount[lang] || 0) + 1;
-                    found = true;
-                    break;
-                }
-            }
-            if (!found && ext) {
-                langCount['Other'] = (langCount['Other'] || 0) + 1;
-            }
-        });
-        
-        return Object.entries(langCount)
-            .map(([lang, count]) => ({ lang, count }))
-            .sort((a, b) => b.count - a.count);
+
+        if (!matched && ext) {
+            langCount.Other = (langCount.Other || 0) + 1;
+        }
     }
+
+    return Object.entries(langCount)
+        .map(([lang, count]) => ({ lang, count }))
+        .sort((a, b) => b.count - a.count);
+}
+
 
     getFirstCommit() {
         return this.exec('git log --reverse --format="%H|%an|%ae|%ad" --date=short | head -1');
@@ -172,9 +193,25 @@ class GitStats {
     }
 
     getBranches() {
-        const output = this.exec('git branch -a');
-        return output ? output.split('\n').filter(b => b).length : 0;
-    }
+    const output = this.exec('git branch -a');
+    if (!output) return 0;
+
+    const branches = new Set();
+
+    output.split('\n').forEach(line => {
+        let name = line.trim();
+
+        if (name.startsWith('* ')) {
+            name = name.slice(2);
+        }
+
+        if (name.includes('HEAD ->')) return;
+
+        branches.add(name);
+    });
+
+    return branches.size;
+}
 
     getCodeChurn() {
         const output = this.exec('git log --all --numstat --format="" --no-merges');
