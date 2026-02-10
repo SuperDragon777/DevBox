@@ -1,0 +1,8 @@
+aws.amazon.com
+cloud.google.com
+azure.microsoft.com
+digitalocean.com
+heroku.com
+cloudflare.com
+fastly.com
+akamai.com

@@ -1,0 +1,9 @@
+bbc.com
+cnn.com
+reuters.com
+bloomberg.com
+forbes.com
+businessinsider.com
+theguardian.com
+nytimes.com
+wsj.com

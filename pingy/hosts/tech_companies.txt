@@ -1,0 +1,10 @@
+intel.com
+amd.com
+nvidia.com
+dell.com
+hp.com
+lenovo.com
+cisco.com
+ibm.com
+oracle.com
+salesforce.com
