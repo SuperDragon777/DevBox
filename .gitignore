@@ -7,3 +7,4 @@ github-stats-*.html
 __pycache__
 /pingy/output.txt
 /EXIF-manager/for_test
+/Audit_Software/software_audit_*
