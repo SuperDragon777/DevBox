@@ -5,3 +5,5 @@ dist/
 github-stats-*.html
 .env
 __pycache__
+/pingy/output.txt
+/EXIF-manager/for_test
