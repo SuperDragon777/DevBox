@@ -39,7 +39,7 @@ class GitHubStats:
     
     def get_commit_activity(self, repo_name):
         url = f'{self.base_url}/repos/{self.username}/{repo_name}/commits'
-        params = {'author': self.username, 'per_page': 100}
+        params = {'per_page': 100}
         commits = []
         page = 1
         
@@ -51,8 +51,25 @@ class GitHubStats:
             data = response.json()
             if not data:
                 break
-            commits.extend(data)
             
+            for commit in data:
+                author_login = commit.get('author', {})
+                if author_login:
+                    author_login = author_login.get('login', '')
+                committer_login = commit.get('committer', {})
+                if committer_login:
+                    committer_login = committer_login.get('login', '')
+                commit_author = commit.get('commit', {}).get('author', {}).get('name', '')
+                commit_email = commit.get('commit', {}).get('author', {}).get('email', '')
+                
+                if (author_login == self.username or 
+                    committer_login == self.username or
+                    self.username.lower() in commit_author.lower() or
+                    self.username.lower() in commit_email.lower()):
+                    commits.append(commit)
+            
+            if len(data) < 100:
+                break
             if 'Link' not in response.headers:
                 break
             if 'rel="next"' not in response.headers['Link']:

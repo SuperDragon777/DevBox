@@ -1,2 +1,6 @@
 *.exe
 *.log
+node_modules/
+dist/
+github-stats-*.html
+.env
