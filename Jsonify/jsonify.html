@@ -1,0 +1,752 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Jsonify - JSON Formatter & Validator</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #0d1117;
+            min-height: 100vh;
+            padding: 20px;
+            color: #c9d1d9;
+        }
+
+        .container {
+            max-width: 1600px;
+            margin: 0 auto;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        h1 {
+            font-size: 3em;
+            font-weight: 700;
+            margin-bottom: 10px;
+            background: linear-gradient(135deg, #58a6ff 0%, #bc8cff 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .subtitle {
+            font-size: 1.2em;
+            color: #8b949e;
+        }
+
+        .panel {
+            display: block;
+            margin-bottom: 20px;
+        }
+
+        .panel {
+            background: #161b22;
+            border-radius: 12px;
+            padding: 20px;
+            border: 1px solid #30363d;
+            margin-bottom: 20px;
+        }
+
+        .panel-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid #30363d;
+        }
+
+        .panel-title {
+            font-size: 1.3em;
+            font-weight: 600;
+            color: #c9d1d9;
+        }
+
+        textarea {
+            width: 100%;
+            height: 300px;
+            padding: 15px;
+            background: #0d1117;
+            border: 1px solid #30363d;
+            border-radius: 8px;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+            resize: vertical;
+            transition: border-color 0.3s;
+            color: #c9d1d9;
+        }
+
+        textarea:focus {
+            outline: none;
+            border-color: #58a6ff;
+        }
+
+        .controls {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            margin-bottom: 20px;
+            justify-content: center;
+        }
+
+        button {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            font-size: 1em;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #58a6ff 0%, #bc8cff 100%);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(88, 166, 255, 0.4);
+        }
+
+        .btn-secondary {
+            background: #21262d;
+            color: #c9d1d9;
+            border: 1px solid #30363d;
+        }
+
+        .btn-secondary:hover {
+            background: #30363d;
+        }
+
+        .btn-success {
+            background: #238636;
+            color: white;
+        }
+
+        .status {
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            font-weight: 500;
+            display: none;
+            border: 1px solid;
+        }
+
+        .status.success {
+            background: #0d1117;
+            color: #3fb950;
+            border-color: #238636;
+        }
+
+        .status.error {
+            background: #0d1117;
+            color: #f85149;
+            border-color: #da3633;
+        }
+
+        .status.show {
+            display: block;
+        }
+
+        /* Schema Visualization */
+        .schema-container {
+            position: relative;
+            min-height: 500px;
+            background: #0d1117;
+            border-radius: 8px;
+            padding: 20px;
+            overflow: auto;
+        }
+
+        .schema-card {
+            position: absolute;
+            background: #161b22;
+            border: 2px solid #30363d;
+            border-radius: 10px;
+            padding: 15px;
+            min-width: 200px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+            transition: all 0.3s;
+        }
+
+        .schema-card:hover {
+            border-color: #58a6ff;
+            box-shadow: 0 6px 20px rgba(88, 166, 255, 0.3);
+            transform: translateY(-2px);
+        }
+
+        .schema-card-header {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 12px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid #30363d;
+        }
+
+        .schema-card-icon {
+            width: 32px;
+            height: 32px;
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.2em;
+        }
+
+        .type-object .schema-card-icon {
+            background: linear-gradient(135deg, #f78166 0%, #fb8500 100%);
+        }
+
+        .type-array .schema-card-icon {
+            background: linear-gradient(135deg, #a371f7 0%, #bc8cff 100%);
+        }
+
+        .type-string .schema-card-icon {
+            background: linear-gradient(135deg, #3fb950 0%, #7ee787 100%);
+        }
+
+        .type-number .schema-card-icon {
+            background: linear-gradient(135deg, #58a6ff 0%, #79c0ff 100%);
+        }
+
+        .type-boolean .schema-card-icon {
+            background: linear-gradient(135deg, #f85149 0%, #ff7b72 100%);
+        }
+
+        .type-null .schema-card-icon {
+            background: linear-gradient(135deg, #8b949e 0%, #6e7681 100%);
+        }
+
+        .schema-card-title {
+            font-weight: 700;
+            font-size: 1.1em;
+            color: #c9d1d9;
+        }
+
+        .schema-card-type {
+            font-size: 0.85em;
+            color: #8b949e;
+            font-family: 'Courier New', monospace;
+        }
+
+        .schema-card-body {
+            font-size: 0.9em;
+        }
+
+        .schema-property {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 6px 0;
+            color: #8b949e;
+        }
+
+        .schema-property-name {
+            color: #79c0ff;
+            font-weight: 600;
+        }
+
+        .schema-property-type {
+            color: #f85149;
+            font-family: 'Courier New', monospace;
+            font-size: 0.85em;
+        }
+
+        svg {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        .connection-line {
+            stroke: #30363d;
+            stroke-width: 2;
+            fill: none;
+            transition: stroke 0.3s;
+        }
+
+        .connection-line.active {
+            stroke: #58a6ff;
+            stroke-width: 3;
+        }
+
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 15px;
+        }
+
+        .stat-box {
+            background: #161b22;
+            border: 1px solid #30363d;
+            padding: 15px;
+            border-radius: 8px;
+            text-align: center;
+        }
+
+        .stat-value {
+            font-size: 2em;
+            font-weight: 700;
+            background: linear-gradient(135deg, #58a6ff 0%, #bc8cff 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .stat-label {
+            font-size: 0.9em;
+            color: #8b949e;
+            margin-top: 5px;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: #8b949e;
+        }
+
+        .empty-state-icon {
+            font-size: 4em;
+            margin-bottom: 20px;
+            opacity: 0.5;
+        }
+
+        @media (max-width: 968px) {
+            .main-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Jsonify</h1>
+            <p class="subtitle">JSON Formatting, Validation and Visualization</p>
+        </header>
+
+        <div class="controls">
+            <button class="btn-primary" onclick="formatJSON()">Format</button>
+            <button class="btn-primary" onclick="validateJSON()">Validate</button>
+            <button class="btn-primary" onclick="minifyJSON()">Minify</button>
+            <button class="btn-secondary" onclick="copyToClipboard()">Copy</button>
+            <button class="btn-secondary" onclick="clearAll()">Clear</button>
+            <button class="btn-success" onclick="downloadJSON()">Download</button>
+        </div>
+
+        <div class="status" id="status"></div>
+
+        <div class="main-grid">
+            <div class="panel">
+                <div class="panel-header">
+                    <span class="panel-title">JSON Editor</span>
+                </div>
+                <textarea id="input" placeholder='Enter JSON here, for example:
+{
+  "name": "Jsonify",
+  "version": "1.0.0",
+  "features": ["formatting", "validation", "visualization"]
+}'></textarea>
+                <textarea id="output" placeholder="Formatted JSON will appear here..." readonly style="margin-top: 15px;"></textarea>
+            </div>
+        </div>
+
+        <div class="panel">
+            <div class="panel-header">
+                <span class="panel-title">JSON Statistics</span>
+            </div>
+            <div class="stats" id="stats">
+                <div class="stat-box">
+                    <div class="stat-value" id="stat-size">-</div>
+                    <div class="stat-label">Size (bytes)</div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-value" id="stat-keys">-</div>
+                    <div class="stat-label">Keys</div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-value" id="stat-depth">-</div>
+                    <div class="stat-label">Depth</div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-value" id="stat-arrays">-</div>
+                    <div class="stat-label">Arrays</div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-value" id="stat-objects">-</div>
+                    <div class="stat-label">Objects</div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-value" id="stat-strings">-</div>
+                    <div class="stat-label">Strings</div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-value" id="stat-numbers">-</div>
+                    <div class="stat-label">Numbers</div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-value" id="stat-booleans">-</div>
+                    <div class="stat-label">Booleans</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="panel">
+            <div class="panel-header">
+                <span class="panel-title">Validation Schema</span>
+            </div>
+            <div class="schema-container" id="schema-container">
+                <div class="empty-state">
+                    <div class="empty-state-icon">🔍</div>
+                    <h3>Validation Schema</h3>
+                    <p>Enter and format JSON to see visual schema</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let parsedData = null;
+
+        function showStatus(message, type) {
+            const status = document.getElementById('status');
+            status.textContent = message;
+            status.className = `status ${type} show`;
+            setTimeout(() => {
+                status.classList.remove('show');
+            }, 3000);
+        }
+
+        function formatJSON() {
+            const input = document.getElementById('input').value.trim();
+            
+            if (!input) {
+                showStatus('Enter JSON to format', 'error');
+                return;
+            }
+
+            try {
+                parsedData = JSON.parse(input);
+                const formatted = JSON.stringify(parsedData, null, 2);
+                document.getElementById('output').value = formatted;
+                visualizeSchema(parsedData);
+                updateStats(formatted, parsedData);
+                showStatus('JSON formatted successfully!', 'success');
+            } catch (e) {
+                showStatus(`Parsing error: ${e.message}`, 'error');
+                document.getElementById('schema-container').innerHTML = 
+                    `<div class="empty-state"><div class="empty-state-icon">❌</div><h3>Parsing Error</h3><p>${e.message}</p></div>`;
+            }
+        }
+
+        function validateJSON() {
+            const input = document.getElementById('input').value.trim();
+            
+            if (!input) {
+                showStatus('Enter JSON to validate', 'error');
+                return;
+            }
+
+            try {
+                JSON.parse(input);
+                showStatus('JSON is valid!', 'success');
+            } catch (e) {
+                showStatus(`Invalid JSON: ${e.message}`, 'error');
+            }
+        }
+
+        function minifyJSON() {
+            const input = document.getElementById('input').value.trim();
+            
+            if (!input) {
+                showStatus('Enter JSON to minify', 'error');
+                return;
+            }
+
+            try {
+                const parsed = JSON.parse(input);
+                const minified = JSON.stringify(parsed);
+                document.getElementById('output').value = minified;
+                showStatus(`JSON minified! Compression: ${input.length} → ${minified.length} bytes`, 'success');
+            } catch (e) {
+                showStatus(`Error: ${e.message}`, 'error');
+            }
+        }
+
+        function visualizeSchema(data) {
+            const container = document.getElementById('schema-container');
+            container.innerHTML = '';
+            
+            const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+            container.appendChild(svg);
+
+            const cards = [];
+            const connections = [];
+            
+            const rootCard = createSchemaCard(data, 'root', 0, 0);
+            container.appendChild(rootCard);
+            cards.push({ element: rootCard, data: data, key: 'root', x: 50, y: 50 });
+
+            rootCard.style.left = '50px';
+            rootCard.style.top = '50px';
+
+            let yOffset = 250;
+            let xOffset = 50;
+            
+            if (typeof data === 'object' && data !== null) {
+                const entries = Array.isArray(data) ? data.map((v, i) => [i, v]) : Object.entries(data);
+                
+                entries.forEach(([key, value], index) => {
+                    if (typeof value === 'object' && value !== null) {
+                        const childCard = createSchemaCard(value, key, xOffset, yOffset);
+                        container.appendChild(childCard);
+                        
+                        childCard.style.left = xOffset + 'px';
+                        childCard.style.top = yOffset + 'px';
+                        
+                        cards.push({ element: childCard, data: value, key: key, x: xOffset, y: yOffset });
+                        
+                        connections.push({
+                            from: cards[0],
+                            to: cards[cards.length - 1]
+                        });
+                        
+                        xOffset += 320;
+                        if (xOffset > 1000) {
+                            xOffset = 50;
+                            yOffset += 300;
+                        }
+                    }
+                });
+            }
+
+            setTimeout(() => {
+                connections.forEach(conn => {
+                    drawConnection(svg, conn.from, conn.to);
+                });
+            }, 100);
+        }
+
+        function createSchemaCard(data, key, x, y) {
+            const card = document.createElement('div');
+            const type = getType(data);
+            card.className = `schema-card type-${type}`;
+            
+            const icon = getTypeIcon(type);
+            const typeName = type.charAt(0).toUpperCase() + type.slice(1);
+            
+            let bodyContent = '';
+            
+            if (typeof data === 'object' && data !== null) {
+                const entries = Array.isArray(data) ? data.map((v, i) => [i, v]) : Object.entries(data);
+                const preview = entries.slice(0, 5);
+                
+                preview.forEach(([k, v]) => {
+                    const valueType = getType(v);
+                    bodyContent += `
+                        <div class="schema-property">
+                            <span class="schema-property-name">${escapeHtml(String(k))}</span>
+                            <span class="schema-property-type">${valueType}</span>
+                        </div>
+                    `;
+                });
+                
+                if (entries.length > 5) {
+                    bodyContent += `<div class="schema-property" style="color: #6e7681;">...${entries.length - 5} more</div>`;
+                }
+            } else {
+                bodyContent = `<div class="schema-property"><span style="color: #8b949e;">${escapeHtml(String(data))}</span></div>`;
+            }
+            
+            card.innerHTML = `
+                <div class="schema-card-header">
+                    <div class="schema-card-icon">${icon}</div>
+                    <div>
+                        <div class="schema-card-title">${escapeHtml(String(key))}</div>
+                        <div class="schema-card-type">${typeName}</div>
+                    </div>
+                </div>
+                <div class="schema-card-body">
+                    ${bodyContent}
+                </div>
+            `;
+            
+            return card;
+        }
+
+        function getType(value) {
+            if (value === null) return 'null';
+            if (Array.isArray(value)) return 'array';
+            return typeof value;
+        }
+
+        function getTypeIcon(type) {
+            const icons = {
+                'object': '{}',
+                'array': '[]',
+                'string': 'Aa',
+                'number': '#',
+                'boolean': '✓',
+                'null': '∅'
+            };
+            return icons[type] || '?';
+        }
+
+        function drawConnection(svg, from, to) {
+            const fromRect = from.element.getBoundingClientRect();
+            const toRect = to.element.getBoundingClientRect();
+            const containerRect = svg.parentElement.getBoundingClientRect();
+            
+            const x1 = fromRect.left - containerRect.left + fromRect.width / 2;
+            const y1 = fromRect.bottom - containerRect.top;
+            const x2 = toRect.left - containerRect.left + toRect.width / 2;
+            const y2 = toRect.top - containerRect.top;
+            
+            const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+            const midY = (y1 + y2) / 2;
+            
+            const d = `M ${x1} ${y1} C ${x1} ${midY}, ${x2} ${midY}, ${x2} ${y2}`;
+            path.setAttribute('d', d);
+            path.setAttribute('class', 'connection-line');
+            
+            svg.appendChild(path);
+        }
+
+        function updateStats(jsonString, data) {
+            document.getElementById('stat-size').textContent = new Blob([jsonString]).size;
+            document.getElementById('stat-keys').textContent = countKeys(data);
+            document.getElementById('stat-depth').textContent = getDepth(data);
+            document.getElementById('stat-arrays').textContent = countArrays(data);
+            document.getElementById('stat-objects').textContent = countObjects(data);
+            document.getElementById('stat-strings').textContent = countType(data, 'string');
+            document.getElementById('stat-numbers').textContent = countType(data, 'number');
+            document.getElementById('stat-booleans').textContent = countType(data, 'boolean');
+        }
+
+        function countKeys(obj, count = 0) {
+            if (typeof obj === 'object' && obj !== null) {
+                if (Array.isArray(obj)) {
+                    obj.forEach(item => count = countKeys(item, count));
+                } else {
+                    count += Object.keys(obj).length;
+                    Object.values(obj).forEach(val => count = countKeys(val, count));
+                }
+            }
+            return count;
+        }
+
+        function getDepth(obj) {
+            if (typeof obj !== 'object' || obj === null) return 0;
+            
+            if (Array.isArray(obj)) {
+                return obj.length === 0 ? 1 : 1 + Math.max(...obj.map(getDepth));
+            }
+            
+            const keys = Object.keys(obj);
+            return keys.length === 0 ? 1 : 1 + Math.max(...keys.map(key => getDepth(obj[key])));
+        }
+
+        function countArrays(obj, count = 0) {
+            if (Array.isArray(obj)) {
+                count++;
+                obj.forEach(item => count = countArrays(item, count));
+            } else if (typeof obj === 'object' && obj !== null) {
+                Object.values(obj).forEach(val => count = countArrays(val, count));
+            }
+            return count;
+        }
+
+        function countObjects(obj, count = 0) {
+            if (typeof obj === 'object' && obj !== null && !Array.isArray(obj)) {
+                count++;
+                Object.values(obj).forEach(val => count = countObjects(val, count));
+            } else if (Array.isArray(obj)) {
+                obj.forEach(item => count = countObjects(item, count));
+            }
+            return count;
+        }
+
+        function countType(obj, type, count = 0) {
+            if (typeof obj === type) {
+                count++;
+            } else if (typeof obj === 'object' && obj !== null) {
+                const values = Array.isArray(obj) ? obj : Object.values(obj);
+                values.forEach(val => count = countType(val, type, count));
+            }
+            return count;
+        }
+
+        function escapeHtml(text) {
+            const map = {
+                '&': '&amp;',
+                '<': '&lt;',
+                '>': '&gt;',
+                '"': '&quot;',
+                "'": '&#039;'
+            };
+            return text.replace(/[&<>"']/g, m => map[m]);
+        }
+
+        function copyToClipboard() {
+            const output = document.getElementById('output');
+            if (!output.value) {
+                showStatus('Nothing to copy. Format JSON first', 'error');
+                return;
+            }
+            output.select();
+            document.execCommand('copy');
+            showStatus('Copied to clipboard!', 'success');
+        }
+
+        function clearAll() {
+            document.getElementById('input').value = '';
+            document.getElementById('output').value = '';
+            document.getElementById('schema-container').innerHTML = 
+                '<div class="empty-state"><div class="empty-state-icon">🔍</div><h3>Validation Schema</h3><p>Enter and format JSON to see visual schema</p></div>';
+            document.getElementById('stat-size').textContent = '-';
+            document.getElementById('stat-keys').textContent = '-';
+            document.getElementById('stat-depth').textContent = '-';
+            document.getElementById('stat-arrays').textContent = '-';
+            document.getElementById('stat-objects').textContent = '-';
+            document.getElementById('stat-strings').textContent = '-';
+            document.getElementById('stat-numbers').textContent = '-';
+            document.getElementById('stat-booleans').textContent = '-';
+            showStatus('Cleared', 'success');
+        }
+
+        function downloadJSON() {
+            const output = document.getElementById('output').value.trim();
+            
+            if (!output) {
+                showStatus('Nothing to download. Format JSON first', 'error');
+                return;
+            }
+
+            const blob = new Blob([output], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `jsonify-${Date.now()}.json`;
+            a.click();
+            URL.revokeObjectURL(url);
+            showStatus('File downloaded!', 'success');
+        }
+    </script>
+</body>
+</html>
