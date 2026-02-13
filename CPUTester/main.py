@@ -24,24 +24,33 @@ class CPUTester:
             'freq_max': cpu_freq.max if cpu_freq else 0,
         }
     
-    def cpu_stress_worker(self, duration):
+    def cpu_stress_worker(self, duration, target_load):
         end_time = time.time() + duration
+        work_time = target_load / 100.0
+        sleep_time = 1.0 - work_time
+        
         while time.time() < end_time and self.is_running:
-            for _ in range(10000):
-                if not self.is_running:
-                    return
-                math.sqrt(math.factorial(20))
-                math.sin(math.pi * 12345.6789)
-                math.cos(math.e * 98765.4321)
+            cycle_start = time.time()
+            
+            while time.time() - cycle_start < work_time and self.is_running:
+                for _ in range(1000):
+                    if not self.is_running:
+                        return
+                    math.sqrt(math.factorial(20))
+                    math.sin(math.pi * 12345.6789)
+                    math.cos(math.e * 98765.4321)
+            
+            if sleep_time > 0 and self.is_running:
+                time.sleep(sleep_time)
     
-    def stress_test(self, num_threads, duration_seconds, progress_callback=None):
+    def stress_test(self, num_threads, duration_seconds, target_load, progress_callback=None):
         self.workers = []
         threads = []
         
         for i in range(num_threads):
             thread = threading.Thread(
                 target=self.cpu_stress_worker,
-                args=(duration_seconds,),
+                args=(duration_seconds, target_load),
                 daemon=True
             )
             threads.append(thread)
@@ -236,7 +245,7 @@ class CPUTesterGUI:
         
         self.threads_entry = tk.Entry(
             stress_inner,
-            width=12,
+            width=10,
             font=('Arial', 11),
             bg='#45475a',
             fg=self.colors['fg'],
@@ -255,7 +264,7 @@ class CPUTesterGUI:
         
         self.stress_duration_entry = tk.Entry(
             stress_inner,
-            width=12,
+            width=10,
             font=('Arial', 11),
             bg='#45475a',
             fg=self.colors['fg'],
@@ -263,6 +272,25 @@ class CPUTesterGUI:
         )
         self.stress_duration_entry.grid(row=0, column=3, padx=8)
         self.stress_duration_entry.insert(0, "60")
+        
+        tk.Label(
+            stress_inner,
+            text="Load (%):",
+            bg=self.colors['card'],
+            fg=self.colors['fg'],
+            font=('Arial', 11)
+        ).grid(row=0, column=4, padx=(20, 8), sticky='w')
+        
+        self.load_entry = tk.Entry(
+            stress_inner,
+            width=10,
+            font=('Arial', 11),
+            bg='#45475a',
+            fg=self.colors['fg'],
+            insertbackground=self.colors['fg']
+        )
+        self.load_entry.grid(row=0, column=5, padx=8)
+        self.load_entry.insert(0, "100")
         
         self.stress_btn = tk.Button(
             stress_inner,
@@ -277,7 +305,7 @@ class CPUTesterGUI:
             pady=5,
             cursor='hand2'
         )
-        self.stress_btn.grid(row=0, column=4, padx=15)
+        self.stress_btn.grid(row=0, column=6, padx=15)
         
         benchmark_frame = tk.LabelFrame(
             control_frame,
@@ -408,9 +436,14 @@ class CPUTesterGUI:
         try:
             threads = int(self.threads_entry.get())
             duration = int(self.stress_duration_entry.get())
+            load = int(self.load_entry.get())
             
             if threads <= 0 or duration <= 0:
                 messagebox.showerror("Error", "Enter valid positive values!")
+                return
+            
+            if load <= 0 or load > 100:
+                messagebox.showerror("Error", "Load must be between 1 and 100%!")
                 return
                 
             if threads > self.tester.cpu_count * 4:
@@ -428,13 +461,13 @@ class CPUTesterGUI:
         
         def progress_callback(progress, remaining, cpu_percent):
             self.progress_bar['value'] = progress
-            self.status_label.config(text=f"Running stress test...")
+            self.status_label.config(text=f"Running stress test at {load}% target load...")
             self.countdown_label.config(
                 text=f"Remaining: {remaining} sec | CPU: {cpu_percent:.1f}%"
             )
             
         def task():
-            result, message = self.tester.stress_test(threads, duration, progress_callback)
+            result, message = self.tester.stress_test(threads, duration, load, progress_callback)
             self.root.after(0, lambda: self.on_stress_complete(result, message))
         
         threading.Thread(target=task, daemon=True).start()
