@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DeZalgo</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .container {
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            max-width: 800px;
+            width: 100%;
+            padding: 40px;
+        }
+
+        h1 {
+            color: #333;
+            margin-bottom: 10px;
+            font-size: 2em;
+        }
+
+        .subtitle {
+            color: #666;
+            margin-bottom: 30px;
+            font-size: 0.95em;
+        }
+
+        .textarea-container {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            color: #555;
+            font-weight: 500;
+            font-size: 0.9em;
+        }
+
+        textarea {
+            width: 100%;
+            min-height: 150px;
+            padding: 15px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+            resize: vertical;
+            transition: border-color 0.3s;
+        }
+
+        textarea:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .button-group {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+
+        button {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s;
+            flex: 1;
+            min-width: 120px;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn-secondary {
+            background: #f5f5f5;
+            color: #333;
+        }
+
+        .btn-secondary:hover {
+            background: #e0e0e0;
+        }
+
+        .stats {
+            background: #f8f9fa;
+            border-radius: 8px;
+            padding: 15px;
+            margin-top: 20px;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+        }
+
+        .stat-item {
+            text-align: center;
+        }
+
+        .stat-value {
+            font-size: 24px;
+            font-weight: bold;
+            color: #667eea;
+            display: block;
+        }
+
+        .stat-label {
+            font-size: 12px;
+            color: #666;
+            margin-top: 4px;
+            display: block;
+        }
+
+        .info {
+            background: #e3f2fd;
+            border-left: 4px solid #2196F3;
+            padding: 12px 16px;
+            border-radius: 4px;
+            margin-top: 20px;
+            font-size: 0.9em;
+            color: #1976D2;
+        }
+
+        @media (max-width: 600px) {
+            .container {
+                padding: 20px;
+            }
+
+            h1 {
+                font-size: 1.5em;
+            }
+
+            .button-group {
+                flex-direction: column;
+            }
+
+            button {
+                width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔧 DeZalgo</h1>
+        <p class="subtitle">Utility for cleaning text from zalgo characters</p>
+
+        <div class="textarea-container">
+            <label for="input">Original text (with zalgo):</label>
+            <textarea id="input" placeholder="Paste text with zalgo characters..."></textarea>
+        </div>
+
+        <div class="button-group">
+            <button class="btn-primary" onclick="cleanText()">Clean Text</button>
+            <button class="btn-secondary" onclick="copyOutput()">Copy Result</button>
+            <button class="btn-secondary" onclick="clearAll()">Clear All</button>
+        </div>
+
+        <div class="textarea-container">
+            <label for="output">Cleaned text:</label>
+            <textarea id="output" readonly placeholder="Cleaned text will appear here..."></textarea>
+        </div>
+
+        <div class="stats" id="stats" style="display: none;">
+            <div class="stat-item">
+                <span class="stat-value" id="originalLength">0</span>
+                <span class="stat-label">Characters before</span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-value" id="cleanedLength">0</span>
+                <span class="stat-label">Characters after</span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-value" id="removedCount">0</span>
+                <span class="stat-label">Zalgo removed</span>
+            </div>
+        </div>
+
+        <div class="info">
+            💡 <strong>What is Zalgo?</strong> It's text with multiple diacritical marks creating a "glitchy" effect. This utility removes Unicode combining characters, leaving only readable text.
+        </div>
+    </div>
+
+    <script>
+        function isZalgo(char) {
+            const code = char.charCodeAt(0);
+            return (
+                (code >= 0x0300 && code <= 0x036F) ||
+                (code >= 0x1AB0 && code <= 0x1AFF) ||
+                (code >= 0x1DC0 && code <= 0x1DFF) ||
+                (code >= 0x20D0 && code <= 0x20FF) ||
+                (code >= 0xFE20 && code <= 0xFE2F)
+            );
+        }
+
+        function cleanText() {
+            const input = document.getElementById('input').value;
+            const output = document.getElementById('output');
+            
+            if (!input.trim()) {
+                alert('Please enter text to clean');
+                return;
+            }
+
+            const originalLength = input.length;
+            
+            let cleaned = '';
+            let removedCount = 0;
+            
+            for (let char of input) {
+                if (isZalgo(char)) {
+                    removedCount++;
+                } else {
+                    cleaned += char;
+                }
+            }
+
+            output.value = cleaned;
+
+            document.getElementById('originalLength').textContent = originalLength;
+            document.getElementById('cleanedLength').textContent = cleaned.length;
+            document.getElementById('removedCount').textContent = removedCount;
+            document.getElementById('stats').style.display = 'grid';
+        }
+
+        function copyOutput() {
+            const output = document.getElementById('output');
+            
+            if (!output.value) {
+                alert('Nothing to copy! Clean the text first.');
+                return;
+            }
+
+            output.select();
+            document.execCommand('copy');
+            
+            const btn = event.target;
+            const originalText = btn.textContent;
+            btn.textContent = '✓ Copied!';
+            setTimeout(() => {
+                btn.textContent = originalText;
+            }, 2000);
+        }
+
+        function clearAll() {
+            document.getElementById('input').value = '';
+            document.getElementById('output').value = '';
+            document.getElementById('stats').style.display = 'none';
+        }
+
+        document.getElementById('input').addEventListener('input', function() {
+            if (this.value.length > 0) {
+            }
+        });
+    </script>
+</body>
+</html>
